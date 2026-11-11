@@ -8,8 +8,8 @@
     {
       "name": "quins-unity-skills",
       "source": "./",
-      "description": "Unity skills: VFX from texture packs, real-input PlayMode tests, asset pack extraction, model icon rendering.",
-      "version": "0.2.0"
+      "description": "Unity skills: VFX from texture packs, real-input PlayMode tests, asset pack extraction, model icon rendering, Editor CLI recovery.",
+      "version": "0.3.0"
     }
   ]
 }
