@@ -1,6 +1,6 @@
 {
   "name": "quins-unity-skills",
-  "description": "Quin's Unity skills for Claude Code: VFX generation from texture packs and more.",
+  "description": "Quin's Unity skills for Claude Code: VFX, testing, asset packs and icons.",
   "owner": {
     "name": "Quin Henshaw"
   },
@@ -8,8 +8,8 @@
     {
       "name": "quins-unity-skills",
       "source": "./",
-      "description": "Unity skills: textured VFX Graph generation from texture packs (more to come).",
-      "version": "0.1.0"
+      "description": "Unity skills: VFX from texture packs, real-input PlayMode tests, asset pack extraction, model icon rendering.",
+      "version": "0.2.0"
     }
   ]
 }

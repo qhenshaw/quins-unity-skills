@@ -1,9 +1,9 @@
 {
   "name": "quins-unity-skills",
-  "version": "0.1.0",
-  "description": "Unity skills from shipped prototypes. Starts with generating a full textured VFX set (VFX Graph) from a texture/flipbook pack.",
+  "version": "0.2.0",
+  "description": "Unity skills from shipped prototypes: VFX Graph effects from texture packs, PlayMode tests through real input devices, selective asset pack extraction, and 3D model icon rendering.",
   "author": {
     "name": "Quin Henshaw"
   },
-  "keywords": ["unity", "vfx", "vfx-graph", "urp", "gamedev"]
+  "keywords": ["unity", "vfx", "vfx-graph", "urp", "gamedev", "testing", "input-system", "asset-store", "icons"]
 }
