@@ -10,10 +10,10 @@ A Claude Code plugin with Unity skills distilled from working prototypes.
 
 ## Install
 
-Once this repo is on GitHub:
+From GitHub:
 
 ```
-/plugin marketplace add <github-user>/quins-unity-skills
+/plugin marketplace add qhenshaw/quins-unity-skills
 /plugin install quins-unity-skills@quins-unity-skills
 ```
 
