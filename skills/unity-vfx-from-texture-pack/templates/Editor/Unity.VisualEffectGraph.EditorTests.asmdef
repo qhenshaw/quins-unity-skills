@@ -1,0 +1,22 @@
+{
+    "name": "Unity.VisualEffectGraph.EditorTests",
+    "rootNamespace": "VfxToolkit.Editor",
+    "references": [
+        "Unity.VisualEffectGraph.Editor",
+        "Unity.VisualEffectGraph.Runtime",
+        "Unity.ShaderGraph.Editor",
+        "Unity.RenderPipelines.Universal.Editor",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Editor",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

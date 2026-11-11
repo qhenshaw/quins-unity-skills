@@ -1,0 +1,9 @@
+{
+  "name": "quins-unity-skills",
+  "version": "0.1.0",
+  "description": "Unity skills from shipped prototypes. Starts with generating a full textured VFX set (VFX Graph) from a texture/flipbook pack.",
+  "author": {
+    "name": "Quin Henshaw"
+  },
+  "keywords": ["unity", "vfx", "vfx-graph", "urp", "gamedev"]
+}

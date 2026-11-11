@@ -1,0 +1,15 @@
+{
+  "name": "quins-unity-skills",
+  "description": "Quin's Unity skills for Claude Code: VFX generation from texture packs and more.",
+  "owner": {
+    "name": "Quin Henshaw"
+  },
+  "plugins": [
+    {
+      "name": "quins-unity-skills",
+      "source": "./",
+      "description": "Unity skills: textured VFX Graph generation from texture packs (more to come).",
+      "version": "0.1.0"
+    }
+  ]
+}
