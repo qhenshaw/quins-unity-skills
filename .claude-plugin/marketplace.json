@@ -1,6 +1,6 @@
 {
   "name": "quins-unity-skills",
-  "description": "Quin's Unity skills for Claude Code: VFX, testing, asset packs, icons and debug tooling.",
+  "description": "Quin's Unity skills for Claude Code: VFX, testing, asset packs, icons and debug tooling, plus a task clarification interview.",
   "owner": {
     "name": "Quin Henshaw"
   },
@@ -8,8 +8,8 @@
     {
       "name": "quins-unity-skills",
       "source": "./",
-      "description": "Unity skills: VFX from texture packs, real-input PlayMode tests, asset pack extraction, model icon rendering, Editor CLI recovery, debug menu with CLI mirror, Steam Deck build + deploy.",
-      "version": "0.5.1"
+      "description": "Unity skills: VFX from texture packs, real-input PlayMode tests, asset pack extraction, model icon rendering, Editor CLI recovery, debug menu with CLI mirror, Steam Deck build + deploy, and clarify (one-question-at-a-time task interview).",
+      "version": "0.6.0"
     }
   ]
 }

@@ -13,6 +13,7 @@ A Claude Code plugin with Unity skills distilled from working prototypes.
 | `quins-unity-skills:unity-editor-cli-recovery` | Keeps a Unity Editor driven through the Pipeline package's `unity command` responsive: finds and clicks the modal dialog that blocks commands (per project, safe with several Editors open), retries the transient "400 Bad Request" / "No Pipeline instance" failures during domain reloads, refreshes before recompiling so new scripts aren't silently skipped, captures the game view to any path without leaving files in the project, wraps Play mode with Run In Background, and how to look up commands and C# APIs for the installed version. Windows dialog script + POSIX capture, retry and recompile scripts. |
 | `quins-unity-skills:unity-debug-menu-cli` | An in-game UI Toolkit debug menu where every feature registers its own section of buttons, toggles, sliders and live readouts, compiled out of release builds, plus two generic `unity command debugmenu` commands that make every control a CLI command, so tests and agents set up and read game state without extra code. Runtime menu, Editor commands, an example feature section and a quiet readout script. |
 | `quins-unity-skills:unity-steam-deck-deploy` | Builds a Windows x64 player for the Steam Deck under Proton (D3D11 first, fullscreen window, project settings restored), smoke-tests it locally, then pushes it to a dev-kit-paired Deck over SSH: staged upload, file count + byte verification, swap without killing a running session, one-time Proton shortcut registration, and Player.log fetch. Editor template + two bash scripts. |
+| `quins-unity-skills:clarify` | General workflow skill: on an explicit "clarify this task" / `/clarify`, maps the task as a decision tree and grills you through one-click multiple-choice questions (up to 4 per dialog, recommended option first, progress line), looking up facts itself, pushing back once on weak answers and confirming its small assumptions in one sweep, until goal, scope, constraints, edge cases, approach, done criteria and verification are all settled. Ends with a decisions summary and waits for your go. |
 
 ## Install
 
@@ -43,13 +44,14 @@ Add a new skill by creating `skills/<new-skill>/SKILL.md` with `name` and `descr
 ## Evals
 
 `evals/` checks that each skill is picked up from a realistic request that doesn't name it (one `trigger-*` case per
-skill, two for the CLI recovery skill) and that none load for an unrelated task (`no-trigger-unrelated`):
+skill, two for the CLI recovery skill) and that none load for an unrelated task (`no-trigger-unrelated`). `clarify` also has
+two negatives: explaining code (`no-trigger-clarify-explain`) and a "grill me" request (`no-trigger-clarify-grill`):
 
 ```
 claude plugin eval . --ablation none --no-publish -j 4
 ```
 
-About $2 for the full suite (9 cases x 2 runs). Run it after changing a skill's `description`, or after adding a skill
+About $2 for the full suite (12 cases x 2 runs). Run it after changing a skill's `description`, or after adding a skill
 (copy a `trigger-*` folder and change the prompt and the skill name in its grader). Results go to `evals/results/`
 (git-ignored).
 
