@@ -22,8 +22,8 @@ shapes change.
 4. **Call `ModelIconRenderer.RenderBatch(jobs)`** from a menu item or the content build step, then assign the
    resulting sprites to the item data (`AssetDatabase.LoadAssetAtPath<Sprite>(path)`), `SetDirty`, `SaveAssets`.
    PNGs are imported as sprites (alpha is transparency, no mipmaps).
-5. **Look at every icon** (contact sheet or the shop UI) and fix outliers with a per-item `rotationOverride`
-   (Euler degrees, applied before the facing correction) rather than tweaking the global heuristics.
+5. **Look at every icon** with `scripts/icon_sheet.py` and fix outliers per item (see *Review loop*) rather than
+   tweaking the global heuristics.
 6. **Commit the PNGs via Git LFS.** Don't commit icons rendered from licensed art to public repos.
 
 ## How the pose is chosen
@@ -39,6 +39,36 @@ shapes change.
   rotation/scale variation (three shards in a 1×3 slot) instead of one tiny model.
 - **Facing:** most packs (Synty included) author props facing +Z; the camera looks along +Z, so models get a 180°
   yaw first (`Options.facingCorrection`). Change it if a pack faces another way.
+
+## Review loop
+
+Never trust a batch you haven't looked at. One sheet catches what a hundred log lines won't.
+
+1. **Sheet:** `python scripts/icon_sheet.py <icon_folder> sheet.png --match ^Armor_ Shield --strip-prefix`, then view
+   the image. Icons keep their aspect ratio, so a 3×1 item shows as a strip, as it will in the grid.
+2. **Classify each bad icon** - the fix differs:
+   - *Side-on / lying down / back facing camera* → pose it with `rotationOverride`. It is applied as
+     `Euler(override) * facingCorrection`, so `(0,0,0)`-ish values mean "as authored, facing the camera": small
+     tilts like `(-5, 15, 0)` give an upright 3/4 view. `(0, 180, 0)` shows the back. Zero means "auto", so use a
+     tiny non-zero value if you want the authored pose exactly.
+   - *Edge-on flat thing (shield, plate, coin)* → the prefab usually has a **rotated child** (weapon display prefabs
+     often rotate the mesh 90° on X so it lies flat in-game). Log the child's `localEulerAngles` before guessing;
+     cancel it in the override and add a roll to lay the long side along the slot, e.g. `(0, 90, 80)` for a flat
+     oval shield in a 3×1 slot.
+   - *Wrong silhouette for the slot* (a tall thin model in a square slot: training dummies, armor stands, banners on
+     poles) → no rotation fixes that; **swap the model**.
+3. **Audition replacement models in one render:** temporarily point several existing items at candidate prefabs
+   (`item.iconModel = candidate`, zero override), render, sheet, pick. Then put the winners in the content code -
+   if the content build re-assigns models on every run, the temporary assignments are overwritten anyway.
+4. **Record poses in the content code**, not only on the assets, so a rebuild with "overwrite data" keeps them.
+   Apply a recorded pose only when the item has none of its own, so hand-tuned poses in the Inspector survive.
+5. Re-render and re-sheet until every icon reads at a glance.
+
+**Good model sources for wearables:** static modular-character parts (e.g. Synty Modular Fantasy Hero
+`Characters_ModularParts_Static/Chr_Torso_*_Static`) make far better chest-armor icons than props such as armor
+stands or training dummies - they fill a square slot and read as "armor" immediately. Character attachment prefabs
+(helmets, shoulder pads, capes) work well for the smaller slots. Static parts use the pack's ordinary texture
+material, so they convert to your shader like any prop.
 
 ## Gotchas
 
@@ -58,3 +88,4 @@ shapes change.
 
 - `templates/Editor/ModelIconRenderer.cs` - `RenderBatch(IconJob[], Options)`, `IconJob(model, cells, pngPath, rotationOverride)`,
   menu **Tools > Icons > Render Selected Prefabs** (1×1 icons into an `Icons/` folder next to each prefab).
+- `scripts/icon_sheet.py` - labelled contact sheet of rendered icons, filterable by name (needs Pillow).

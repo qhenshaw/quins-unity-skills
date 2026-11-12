@@ -60,12 +60,27 @@ off). Driving the device instead of the code path catches that class of bug.
 
 ## Running from the CLI
 
-With the Unity Pipeline package (`unity` CLI) and an open Editor:
+With the Unity Pipeline package (`unity` CLI) and an open Editor, use `scripts/run-tests.sh`:
 
 ```
-unity command test run --mode playmode --filter <TestAssemblyName> --filter-type Assembly --async-tests true
-unity command test status --detail failures
+scripts/run-tests.sh <TestAssemblyName> Assembly     # whole suite
+scripts/run-tests.sh ArmorTests                       # one class (TestName is a partial match)
+scripts/run-tests.sh "ArmorTests.Block_"              # one test
 ```
+
+It exits non-zero on failures, inconclusive tests, zero matches or a rejected run, and prints each failure's message.
+The raw commands are `unity command test run --mode playmode --filter <f> --filter-type <t> --async-tests true`
+then polling `unity command test status --detail summary` / `--detail failures`. Watch for:
+
+- **`test status` shows the previous run until a new one starts.** A run that never started looks like a fresh
+  green result. Check that `total` / `duration` changed (the script waits for that).
+- **`--filter-type` is only `TestName`, `Assembly` or `Category`.** `Class` and `Regex` don't exist; the command
+  prints its usage and runs nothing - which, with the point above, reads as "all passed".
+- **`TestName` is a case-insensitive partial match on the full name** (`Namespace.Class.Method`), so a class name
+  or a `Class.MethodPrefix` selects a group - there's no need for a class filter.
+- **`"total":0` is not a pass.** A typo'd filter matches nothing and reports zero failures.
+- **Count-based assertions** (e.g. "27 recipes") break when content grows - update them with the content, and give
+  the message the reason for the number.
 
 Batchmode alternative: `Unity.exe -batchmode -projectPath <p> -runTests -testPlatform PlayMode -testResults results.xml`
 (the project must not be open in another Editor).
@@ -75,3 +90,4 @@ Batchmode alternative: `Unity.exe -batchmode -projectPath <p> -runTests -testPla
 - `templates/InputTestBase.cs` — device setup/teardown, `Press`/`Release`/`Set`/`Tap`, `WaitFor`, UI Toolkit mouse helpers.
 - `templates/ExampleInputTests.cs` — keyboard movement, gamepad stick + button, pause with real time, drag-and-drop in UI Toolkit.
 - `templates/Tests.PlayMode.asmdef` — test assembly definition.
+- `scripts/run-tests.sh` — runs tests in the open Editor via the `unity` CLI and reports a result that can't be stale.
