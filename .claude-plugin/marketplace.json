@@ -9,7 +9,7 @@
       "name": "quins-unity-skills",
       "source": "./",
       "description": "Unity skills: VFX from texture packs, real-input PlayMode tests, asset pack extraction, model icon rendering, Editor CLI recovery, debug menu with CLI mirror, Steam Deck build + deploy.",
-      "version": "0.5.0"
+      "version": "0.5.1"
     }
   ]
 }

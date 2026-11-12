@@ -1,6 +1,6 @@
 {
   "name": "quins-unity-skills",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Unity skills from shipped prototypes: VFX Graph effects from texture packs, PlayMode tests through real input devices, selective asset pack extraction, 3D model icon rendering, keeping a CLI-driven Editor unblocked, an in-game debug menu whose controls are also CLI commands, and Steam Deck (Proton) builds deployed over the dev kit.",
   "author": {
     "name": "Quin Henshaw"

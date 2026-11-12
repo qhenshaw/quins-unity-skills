@@ -21,6 +21,11 @@ texture references resolve, and re-importing the full pack later would match rat
 2. **Index them** (no extraction): `python scripts/index_unitypackage.py <out_dir> <pkg>...` writes
    `guid  pathname  sizeKB` per entry. Grep the index for the props/characters/FX the game needs; check the
    pack's own `Prefabs/` naming (e.g. Synty `SM_Prop_*`, `SM_Wep_*`, `SK_*` / `Character_*`).
+   **Index every pack the user owns once and keep the indexes** (one `.txt` per package, in a git-ignored folder
+   such as `Library/PackIndexes/` or a notes folder outside the project). Indexing a multi-GB pack takes a while;
+   grepping saved indexes takes milliseconds, so later requests ("find something that reads as chest armor")
+   become one search across every pack - often turning up a better source in a pack you weren't looking at
+   (e.g. static modular-character parts instead of props). Re-index only when a pack updates.
 3. **Dry-run the extraction** to see what the patterns pull in with dependencies and the size:
    `python scripts/extract_unitypackage.py <project_root> <pkg> "Prefabs/Props/SM_Prop_Barrel_0[1-3]" "Prefabs/Weapons/SM_Wep_Staff" --dry-run`
    Tighten patterns until the list and MB are what you expect.

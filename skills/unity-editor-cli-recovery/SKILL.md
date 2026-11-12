@@ -1,6 +1,6 @@
 ---
 name: unity-editor-cli-recovery
-description: Keep a Unity Editor that is driven from the command line (the Pipeline package's `unity command`) responsive and tidy. Use when `unity command` calls time out while `unity status` still says ready, after a branch switch, pull or scene rebuild, when a game-view capture is needed as a file, when Play mode is driven with the Editor unfocused, or before calling an Editor command or C# API you haven't used yet. Complements the unity-cli skill, which covers the commands themselves.
+description: Keep a Unity Editor that is driven from the command line (the Pipeline package's `unity command`) responsive and tidy. Use when `unity command` calls time out while `unity status` still says ready, fail with "400 Bad Request" or "No Pipeline instance" after a recompile or Play mode change, when a newly written script is missing after a recompile, after a branch switch, pull or scene rebuild, when a game-view capture is needed as a file, when Play mode is driven with the Editor unfocused, or before calling an Editor command or C# API you haven't used yet. Complements the unity-cli skill, which covers the commands themselves.
 ---
 
 # Unity Editor CLI recovery
@@ -9,8 +9,8 @@ The `unity-cli` skill teaches the commands. This skill covers what goes wrong wh
 can't see: modal dialogs that block every command, captures that leave files in the project, a Play mode that
 freezes because the Editor is unfocused, and guessed command names.
 
-Scripts live next to this file: `scripts/unity-dialog.ps1` (Windows) and `scripts/capture.sh` (Git Bash or any
-POSIX shell). Pass `--project-path <project>` to every `unity command`: another project's Editor is often open
+Scripts live next to this file: `scripts/unity-dialog.ps1` (Windows), and `scripts/capture.sh`,
+`scripts/unity-retry.sh` and `scripts/unity-recompile.sh` (Git Bash or any POSIX shell). Pass `--project-path <project>` to every `unity command`: another project's Editor is often open
 too, and without it the call can go to the wrong one.
 
 ## 1. Commands time out but `unity status` says ready
@@ -37,7 +37,27 @@ Which button to press:
 Run the script again after clicking: dialogs can chain, such as a reload followed by a save prompt. Restart
 Unity only if no dialog shows and commands still time out.
 
-## 2. Game-view captures as files
+## 2. "400 Bad Request" / "No Pipeline instance" right after a change
+
+Different from section 1: the call fails *fast*. The Editor drops its Pipeline server during every domain reload
+(recompile, entering Play mode, asset import), so a call made in that window gets one of these, or empty output.
+It is transient - retry, don't diagnose:
+
+```bash
+scripts/unity-retry.sh -- command script eval --file "$(cygpath -w my.cs)" --project-path <project>
+scripts/unity-retry.sh --tries 3 -- recompile --project-path <project>
+```
+
+It retries only those transient failures (12 × 5 s by default) and returns anything else at once, including a
+compile error in your eval snippet. A timeout isn't retried: that's section 1.
+
+**Files created outside the Editor need an `AssetDatabase.Refresh()` before `unity recompile`.** Recompile only
+compiles scripts the AssetDatabase already knows. A new `.cs` or `.asmdef` written by an agent is left out, the
+recompile reports no errors, and the new type then "doesn't exist". Use `scripts/unity-recompile.sh <project>`, which
+refreshes, recompiles with retries, prints the compiler messages and exits 1 on errors. The same goes for new
+assets you'll load from code in the next eval (a texture, a prefab copied in by a script): refresh first.
+
+## 3. Game-view captures as files
 
 ```bash
 bash scripts/capture.sh <project-path> <out.png> [--width 1920 --height 1080 --source camera ...]
@@ -55,7 +75,7 @@ look but bloats the transcript: prefer a file and read it.
 `--source screen` (the default) includes Screen Space - Overlay UI in Play mode. `--source camera` doesn't need a
 Game window but, on older packages, never shows overlay canvases.
 
-## 3. Play mode with the Editor unfocused
+## 4. Play mode with the Editor unfocused
 
 An Editor driven from a terminal is usually unfocused. Without Run In Background its player loop stops after the
 first frame, while `editor status` still reports playing. Wrap Play-mode work:
@@ -71,7 +91,7 @@ unity command --project-path <p> editor.playmode set_run_in_background --enable 
 Always turn it back off. The override is recorded in
 `ProjectSettings/Packages/com.unity.pipeline/EditorPipelineConfig.json`, which otherwise shows up as a change.
 
-## 4. Look commands and APIs up instead of guessing
+## 5. Look commands and APIs up instead of guessing
 
 Parameter names differ between Pipeline versions (`save_path` vs `--output-path` above), so check the installed
 package before using a command for the first time:
