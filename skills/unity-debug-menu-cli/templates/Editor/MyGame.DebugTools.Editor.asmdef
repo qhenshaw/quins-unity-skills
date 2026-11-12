@@ -1,0 +1,19 @@
+{
+    "name": "MyGame.DebugTools.Editor",
+    "rootNamespace": "MyGame.DebugTools.Editor",
+    "references": [
+        "MyGame.DebugTools",
+        "Unity.Pipeline.Attributes"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
