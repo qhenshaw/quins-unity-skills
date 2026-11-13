@@ -59,6 +59,9 @@ Ask for the IP if it isn't known; never guess one.
 
 ## Files
 
+Run the scripts as `bash <this skill's base directory>/scripts/<name>` (the base directory is printed when the
+skill loads); don't `find` them in the plugin cache, where older plugin versions linger.
+
 - `templates/Editor/SteamDeckBuild.cs` - menu + `Build()` (D3D11/D3D12, fullscreen window, settings restored, README
   written next to the exe for manual installs).
 - `scripts/deck-deploy.sh` - staged upload, verification, swap, optional shortcut registration, log fetch.

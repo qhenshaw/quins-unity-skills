@@ -15,6 +15,12 @@ A Claude Code plugin with Unity skills distilled from working prototypes.
 | `quins-unity-skills:unity-steam-deck-deploy` | Builds a Windows x64 player for the Steam Deck under Proton (D3D11 first, fullscreen window, project settings restored), smoke-tests it locally, then pushes it to a dev-kit-paired Deck over SSH: staged upload, file count + byte verification, swap without killing a running session, one-time Proton shortcut registration, and Player.log fetch. Editor template + two bash scripts. |
 | `quins-unity-skills:clarify` | General workflow skill: on an explicit "clarify this task" / `/clarify`, maps the task as a decision tree and grills you through one-click multiple-choice questions (up to 4 per dialog, recommended option first, progress line), looking up facts itself, pushing back once on weak answers and confirming its small assumptions in one sweep, until goal, scope, constraints, edge cases, approach, done criteria and verification are all settled. Ends with a decisions summary and waits for your go. |
 
+## Hooks
+
+| Hook | What it does |
+|---|---|
+| Shell guard (`hooks/shell-guard.sh`, PreToolUse on Bash) | Under Git Bash on Windows only, blocks the shell patterns that keep failing there: heredocs (bodies with quotes or apostrophes break and leave half-written files), a bare `python -` (hangs waiting on stdin) and multi-line `python -c` programs (escapes get mangled). It tells Claude to use Write / Edit or a script file instead. Allows everything on macOS / Linux. `QUINS_SHELL_GUARD=off` disables it, `=on` forces it on any OS. |
+
 ## Install
 
 From GitHub:
@@ -37,6 +43,7 @@ To try it locally before publishing:
 .claude-plugin/plugin.json        plugin manifest (bump "version" when publishing changes)
 .claude-plugin/marketplace.json   lets this repo act as its own marketplace
 skills/<skill-name>/SKILL.md      one folder per skill (+ templates/, scripts/, references/)
+hooks/hooks.json                  plugin hooks (shell guard); their scripts sit next to it
 ```
 
 Add a new skill by creating `skills/<new-skill>/SKILL.md` with `name` and `description` frontmatter.

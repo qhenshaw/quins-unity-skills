@@ -5,7 +5,7 @@
 #   run-tests.sh MyGame.Tests.PlayMode Assembly       # a whole test assembly
 #   run-tests.sh ArmorTests                            # TestName = case-insensitive PARTIAL match on the full name
 #   run-tests.sh "ArmorTests.Block_"                   # one test (or a prefix)
-# env: UNITY (default: unity), PROJECT (passed as --project-path), POLL_SECONDS (default 600)
+# env: UNITY (default: unity), PROJECT (passed as --project-path), POLL_SECONDS (default 600), TRIES (default 24)
 #
 # Why a script: `test status` keeps reporting the PREVIOUS run until a new one starts, and `test run` rejects an
 # unknown --filter-type by printing usage - so a typo'd run looks exactly like a green one. This script fails on a
@@ -18,11 +18,29 @@ export UNITY_NO_PAGER=1
 case "$TYPE" in TestName|Assembly|Category) ;; *)
   echo "invalid filter type '$TYPE' - only TestName (partial match), Assembly, Category exist (no Class/Regex)" >&2; exit 2 ;; esac
 
-before=$("${U[@]}" test status --detail summary 2>&1 | grep -E "^(duration|summary):" | tr '\n' ' ')
+# Right after a recompile or Play-mode change the Pipeline server is down for a few seconds (domain reload). Those
+# answers are transient: wait and resubmit (TRIES x 5 s) instead of failing. Any other error is a real rejection.
+TRANSIENT="isn't reachable|not reachable|No Pipeline instance|domain reload|400 Bad Request|ECONNREFUSED|ECONNRESET|socket hang up|connection refused"
+blank() { [ -z "$(printf '%s' "$1" | tr -d '[:space:]')" ]; }
 
-out=$("${U[@]}" test run --mode "$MODE" --filter "$FILTER" --filter-type "$TYPE" --async-tests true 2>&1)
-if echo "$out" | grep -qiE "usage:|unknown option|invalid|error"; then
-  echo "test run was rejected:" >&2; echo "$out" | head -20 >&2; exit 2
+for ((t = 1; t <= ${TRIES:-24}; t++)); do
+  before=$("${U[@]}" test status --detail summary 2>&1)
+  if ! printf '%s' "$before" | grep -qiE "$TRANSIENT" && ! blank "$before"; then break; fi
+  [ $t = 1 ] && echo "(Editor reloading - waiting for the Pipeline server...)" >&2
+  sleep 5
+done
+before=$(printf '%s\n' "$before" | grep -E "^(duration|summary):" | tr '\n' ' ')
+
+for ((t = 1; t <= ${TRIES:-24}; t++)); do
+  out=$("${U[@]}" test run --mode "$MODE" --filter "$FILTER" --filter-type "$TYPE" --async-tests true 2>&1)
+  if printf '%s' "$out" | grep -qiE "$TRANSIENT" || blank "$out"; then sleep 5; continue; fi
+  break
+done
+if printf '%s' "$out" | grep -qiE "$TRANSIENT"; then
+  echo "Pipeline server still unreachable after ${TRIES:-24} tries:" >&2; printf '%s\n' "$out" | head -5 >&2; exit 2
+fi
+if printf '%s' "$out" | grep -qiE "usage:|unknown option|invalid|error"; then
+  echo "test run was rejected:" >&2; printf '%s\n' "$out" | head -20 >&2; exit 2
 fi
 
 seen_running=0

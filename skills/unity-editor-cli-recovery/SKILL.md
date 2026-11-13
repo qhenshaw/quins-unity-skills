@@ -10,7 +10,10 @@ can't see: modal dialogs that block every command, captures that leave files in 
 freezes because the Editor is unfocused, and guessed command names.
 
 Scripts live next to this file: `scripts/unity-dialog.ps1` (Windows), and `scripts/capture.sh`,
-`scripts/unity-retry.sh` and `scripts/unity-recompile.sh` (Git Bash or any POSIX shell). Pass `--project-path <project>` to every `unity command`: another project's Editor is often open
+`scripts/unity-retry.sh`, `scripts/unity-recompile.sh`, `scripts/unity-eval.sh` and `scripts/play-capture.sh` (Git
+Bash or any POSIX shell). Run them as `bash <this skill's base directory>/scripts/<name>` - the base directory is
+printed when the skill loads. Don't `find` them in the plugin cache: older plugin versions stay there and the first
+match is often stale. Pass `--project-path <project>` to every `unity command`: another project's Editor is often open
 too, and without it the call can go to the wrong one.
 
 ## 1. Commands time out but `unity status` says ready
@@ -54,8 +57,15 @@ compile error in your eval snippet. A timeout isn't retried: that's section 1.
 **Files created outside the Editor need an `AssetDatabase.Refresh()` before `unity recompile`.** Recompile only
 compiles scripts the AssetDatabase already knows. A new `.cs` or `.asmdef` written by an agent is left out, the
 recompile reports no errors, and the new type then "doesn't exist". Use `scripts/unity-recompile.sh <project>`, which
-refreshes, recompiles with retries, prints the compiler messages and exits 1 on errors. The same goes for new
-assets you'll load from code in the next eval (a texture, a prefab copied in by a script): refresh first.
+refreshes, recompiles with retries, prints the compiler messages and exits 1 on errors. It also stops Play mode
+first (`--stay-in-play` to skip): the Editor defers compilation while playing, so a recompile in Play mode compiles
+nothing. The same goes for new assets you'll load from code in the next eval (a texture, a prefab copied in by a
+script): refresh first.
+
+**Passing values to an eval.** `script eval` runs inside the Editor, so shell variables never reach the snippet.
+Write `{{key}}` where a value goes and run `scripts/unity-eval.sh <project> show.cs id=Pistol mode=fusion`: it fills
+the placeholders (quote them in the C#: `"{{id}}"`), refuses to run with any left unfilled, and retries like
+`unity-retry.sh`. One snippet then serves every item or mode instead of a copy per value.
 
 ## 3. Game-view captures as files
 
@@ -74,6 +84,24 @@ look but bloats the transcript: prefer a file and read it.
 
 `--source screen` (the default) includes Screen Space - Overlay UI in Play mode. `--source camera` doesn't need a
 Game window but, on older packages, never shows overlay canvases.
+
+**A game state, captured in one command.** To check UI or a scene in a specific state (an item's tooltip, a boss
+fight, a menu), use `scripts/play-capture.sh` instead of chaining the steps by hand:
+
+```bash
+bash scripts/play-capture.sh -p <project> --scene Assets/Scenes/Game.unity --until to-shop.cs \
+  --shot wand=show-item.cs:id=Pistol --shot totem=show-item.cs:id=BloodiedTotem \
+  --crop 455,30,450,1030 --sheet out/tooltips.png
+```
+
+It recompiles (which also leaves Play mode), enters Play with Run In Background on, runs the `--until` snippet once
+a second until it returns `ready`, then for each `--shot` runs its setup snippet (placeholders as in
+`unity-eval.sh`), waits `--settle` seconds and captures. `--crop` + `--sheet` tile the shots into one labelled
+image to read in a single look. It leaves Play mode and turns Run In Background off afterwards (`--stay` to keep
+playing), and writes nothing into the project. Let the `--until` snippet also push the game forward (start the run,
+end the wave, pick level-ups) and return the state it is in otherwise, so "how to get there" lives in one file.
+Use it for the mockup → build → screenshot → compare loop: capture the same items the mockup shows, compare,
+fix, and capture again.
 
 ## 4. Play mode with the Editor unfocused
 

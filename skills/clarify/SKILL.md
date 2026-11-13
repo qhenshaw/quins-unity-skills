@@ -51,8 +51,16 @@ Each turn is one `AskUserQuestion` call and nothing else: no prose before or aft
 ## 5. Assumption sweep
 
 Small choices you would otherwise make silently (naming, defaults, file placement that follows an obvious
-convention) go into one `multiSelect` question near the end: "These are my assumptions — untick any that are
-wrong." Each unticked item becomes a real question on the frontier.
+convention) go into ONE single-select question near the end. Put the assumptions themselves in the question text
+(a short numbered list, each item standing on its own), then offer:
+
+- `All correct (Recommended)` — every assumption is confirmed.
+- `Some are wrong` — the user names which (usually through "Other"); each named item becomes a real question on
+  the frontier.
+
+Don't use a `multiSelect` "untick the wrong ones" list: an unanswered or skipped multi-select comes back as
+"[No preference]", which can't be told apart from "all fine". If the answer still comes back empty or unclear,
+treat the assumptions as *Claude's call*, say so in the decisions summary, and move on.
 
 ## 6. Done criterion
 

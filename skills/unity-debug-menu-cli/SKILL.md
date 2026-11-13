@@ -69,7 +69,7 @@ button, then fight it through real devices.
    Put the registration in the feature's `Scripts/Debug/` folder. A feature with no object of its own in the
    scene puts its controls component on the menu prefab. List the controls in the feature's docs and update them
    when the feature changes.
-5. **Drive it from the CLI.** `scripts/unity-readout.sh` prints only the answer, which suits loops and checks:
+5. **Drive it from the CLI.** `scripts/unity-readout.sh` prints only the answer, which suits loops and checks. Run the scripts as `bash <this skill's base directory>/scripts/<name>` (the base directory is printed when the skill loads); don't `find` them in the plugin cache, where older plugin versions linger.
 
    ```bash
    bash scripts/unity-readout.sh -p <project> Enemies              # every value in the section

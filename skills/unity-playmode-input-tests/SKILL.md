@@ -60,7 +60,7 @@ off). Driving the device instead of the code path catches that class of bug.
 
 ## Running from the CLI
 
-With the Unity Pipeline package (`unity` CLI) and an open Editor, use `scripts/run-tests.sh`:
+With the Unity Pipeline package (`unity` CLI) and an open Editor, use `scripts/run-tests.sh`. Run the scripts as `bash <this skill's base directory>/scripts/<name>` (the base directory is printed when the skill loads); don't `find` them in the plugin cache, where older plugin versions linger. It waits out the few seconds after a recompile or Play-mode change when the Editor's Pipeline server is down ("isn't reachable" / "No Pipeline instance") and resubmits, so you don't need to poll the Editor first:
 
 ```
 scripts/run-tests.sh <TestAssemblyName> Assembly     # whole suite
