@@ -1,6 +1,6 @@
 ---
 name: clarify
-description: Clarify the current task by grilling the user through multiple-choice questions shown one at a time (AskUserQuestion), challenging weak answers, until no open question or ambiguity is left; then summarize the decisions and wait for a go-ahead. Use when the user explicitly asks to clarify a task before work starts ("/clarify", "clarify this task", "ask me clarifying questions", "let's clarify before you start"). A request to explain or describe something ("clarify what this function does") is a normal answer, and "grill me" belongs to the grilling skill.
+description: Clarify the current task by grilling the user through multiple-choice questions shown one at a time (AskUserQuestion), challenging weak answers, until no open question or ambiguity is left; then summarize the decisions and ask one final question that confirms its assumptions and starts the work. Use when the user explicitly asks to clarify a task before work starts ("/clarify", "clarify this task", "ask me clarifying questions", "let's clarify before you start"). A request to explain or describe something ("clarify what this function does") is a normal answer, and "grill me" belongs to the grilling skill.
 ---
 
 # Clarify: grill the task, one question at a time
@@ -48,36 +48,42 @@ Each turn is one `AskUserQuestion` call and nothing else: no prose before or aft
 - **Delegation**: "you decide", "skip", "doesn't matter" → take your recommended option, tag it *Claude's call*
   in the tree, and move on.
 
-## 5. Assumption sweep
+## 5. Assumptions
 
 Small choices you would otherwise make silently (naming, defaults, file placement that follows an obvious
-convention) go into ONE single-select question near the end. Put the assumptions themselves in the question text
-(a short numbered list, each item standing on its own), then offer:
-
-- `All correct (Recommended)` — every assumption is confirmed.
-- `Some are wrong` — the user names which (usually through "Other"); each named item becomes a real question on
-  the frontier.
-
-Don't use a `multiSelect` "untick the wrong ones" list: an unanswered or skipped multi-select comes back as
-"[No preference]", which can't be told apart from "all fine". If the answer still comes back empty or unclear,
-treat the assumptions as *Claude's call*, say so in the decisions summary, and move on.
+convention) are not asked one by one. Collect them as you go; the final question (section 7) confirms them together
+with the go-ahead.
 
 ## 6. Done criterion
 
-You stop only when both hold:
+You stop asking only when both hold:
 
 - **The frontier is empty**: every branch of the tree visited.
-- **Coverage**: each of these has a settled answer (asked, delegated, or a confirmed assumption):
+- **Coverage**: each of these has a settled answer (asked, delegated, or one of the assumptions):
   goal and why · scope · out of scope · constraints (tech, performance, compatibility) · edge cases and failure
   behaviour · approach and structure · done criteria · verification (how it gets tested).
 
 There is no question cap; long interviews are fine. The user can say "decide the rest" at any point, which settles
 every open decision as *Claude's call*.
 
-## 7. Finish
+## 7. Finish: confirm and go in one question
 
 1. Post a decisions summary: a table of decision → answer, with *Claude's call* items tagged so the user can
    revisit them. In plan mode, write it into the plan file too.
-2. Ask "Shared understanding reached?" as an `AskUserQuestion` (Yes, go / Change something).
-3. Start the task only after the user says go. "Change something" reopens that decision and re-asks the questions
-   that hung off it.
+2. Ask ONE single-select `AskUserQuestion` that both confirms the assumptions and gives the go-ahead. Its text
+   lists the assumptions as a short numbered list, each item standing on its own (the dialog may hide the chat),
+   and says the decisions summary is above. Options:
+   - `Accept and go (Recommended)`: every assumption and decision stands; the task starts immediately.
+   - `Correct something`: the user says which assumption or decision is wrong, by number or in their own words
+     (usually through "Other" or the option's notes).
+
+   With no assumptions, the text says so and the question is just the go-ahead on the summary.
+3. **Accept and go** → start the task in the same turn, with no further confirmation.
+   **A correction** → if it settles the item outright ("2 should be X"), update it; otherwise it reopens that
+   decision as a real question, together with the questions that hung off it. Then post the updated summary and
+   ask this final question again.
+4. Never start on an unclear answer: an empty, skipped or ambiguous reply is not a go. Ask once in plain text
+   whether to go ahead.
+
+Don't use a `multiSelect` "untick the wrong ones" list for the assumptions: an unanswered or skipped multi-select
+comes back as "[No preference]", which can't be told apart from "all fine".
