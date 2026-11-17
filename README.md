@@ -19,7 +19,8 @@ A Claude Code plugin with Unity skills distilled from working prototypes.
 
 | Hook | What it does |
 |---|---|
-| Shell guard (`hooks/shell-guard.sh`, PreToolUse on Bash) | Under Git Bash on Windows only, blocks the shell patterns that keep failing there: heredocs (bodies with quotes or apostrophes break and leave half-written files), a bare `python -` (hangs waiting on stdin) and multi-line `python -c` programs (escapes get mangled). It tells Claude to use Write / Edit or a script file instead. Allows everything on macOS / Linux. `QUINS_SHELL_GUARD=off` disables it, `=on` forces it on any OS. |
+| Shell guard (`hooks/shell-guard.sh`, PreToolUse on Bash) | On every OS, blocks polling loops with no deadline (`until <cond>; do sleep N; done` waits forever if the condition never comes true; bound it with `timeout`, a `seq` / `-lt` counter or `$SECONDS`) and Unity `script eval` / `unity-eval.sh` calls without `--timeout` (the CLI otherwise gives up after 30 s while the Editor keeps working); `QUINS_WAIT_GUARD=off` disables these two. Under Git Bash on Windows it also blocks the shell patterns that keep failing there: heredocs (bodies with quotes or apostrophes break and leave half-written files), a bare `python -` (hangs waiting on stdin) and multi-line `python -c` programs (escapes get mangled), and tells Claude to use Write / Edit or a script file instead. `QUINS_SHELL_GUARD=off` disables those, `=on` forces them on any OS. |
+| Console check (`hooks/console-check.sh`, PostToolUse on Bash) | After a Bash call that touches Unity (a `unity` command, a helper script, a test run or autoplay poll), asks the open Editor for its console error count (8 s limit) and tells Claude when it went up since the last check, or when compilation failed, so a run that "looks fine" while the game throws every frame doesn't go unnoticed. Silent outside Unity projects, without the `unity` CLI, or with no new errors. Adds about 2 s to those calls. `QUINS_CONSOLE_CHECK=off` disables it. |
 
 ## Install
 
@@ -43,7 +44,7 @@ To try it locally before publishing:
 .claude-plugin/plugin.json        plugin manifest (bump "version" when publishing changes)
 .claude-plugin/marketplace.json   lets this repo act as its own marketplace
 skills/<skill-name>/SKILL.md      one folder per skill (+ templates/, scripts/, references/)
-hooks/hooks.json                  plugin hooks (shell guard); their scripts sit next to it
+hooks/hooks.json                  plugin hooks (shell guard, console check); their scripts sit next to it
 ```
 
 Add a new skill by creating `skills/<new-skill>/SKILL.md` with `name` and `description` frontmatter.

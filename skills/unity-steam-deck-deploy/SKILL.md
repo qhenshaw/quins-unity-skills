@@ -23,7 +23,7 @@ Ask for the IP if it isn't known; never guess one.
 ## Workflow
 
 1. **Build.** Copy `templates/Editor/SteamDeckBuild.cs` into an editor folder, rename the namespace, and run
-   **Build > Steam Deck (Proton)** or, from the `unity` CLI, `script eval` with
+   **Build > Steam Deck (Proton)** or, from the `unity` CLI, `script eval --timeout 1200` with
    `return MyGame.Editor.SteamDeckBuild.Build();`. It returns one line: `Succeeded <folder> size=… errors=…`.
 2. **Smoke-test locally** if the game has a headless/autoplay mode (strongly recommended - a Deck round trip is
    slow): `scripts/local-smoke.sh <build>/<Game>.exe <game args…>` runs it with a timeout and fails on exceptions in

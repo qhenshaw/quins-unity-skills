@@ -47,12 +47,18 @@ Different from section 1: the call fails *fast*. The Editor drops its Pipeline s
 It is transient - retry, don't diagnose:
 
 ```bash
-scripts/unity-retry.sh -- command script eval --file "$(cygpath -w my.cs)" --project-path <project>
+scripts/unity-retry.sh -- command script eval --file "$(cygpath -w my.cs)" --project-path <project> --timeout 30
 scripts/unity-retry.sh --tries 3 -- recompile --project-path <project>
 ```
 
 It retries only those transient failures (12 × 5 s by default) and returns anything else at once, including a
 compile error in your eval snippet. A timeout isn't retried: that's section 1.
+
+**Size every eval's `--timeout` to the work.** The CLI's default is 30 s; after that it reports a timeout while the
+Editor keeps working, so a content rebuild or build looks finished, or failed, when it is neither. Pass
+`--timeout 30` for quick snippets and 600+ for builds and rebuilds. The plugin's shell guard blocks `script eval` and
+`unity-eval.sh` calls without one. If an eval does time out, check whether the work is actually running (its output
+file's timestamp, `editor status`, the console) before waiting on its result.
 
 **Files created outside the Editor need an `AssetDatabase.Refresh()` before `unity recompile`.** Recompile only
 compiles scripts the AssetDatabase already knows. A new `.cs` or `.asmdef` written by an agent is left out, the
@@ -63,7 +69,7 @@ nothing. The same goes for new assets you'll load from code in the next eval (a 
 script): refresh first.
 
 **Passing values to an eval.** `script eval` runs inside the Editor, so shell variables never reach the snippet.
-Write `{{key}}` where a value goes and run `scripts/unity-eval.sh <project> show.cs id=Pistol mode=fusion`: it fills
+Write `{{key}}` where a value goes and run `scripts/unity-eval.sh <project> show.cs --timeout 30 id=Pistol mode=fusion`: it fills
 the placeholders (quote them in the C#: `"{{id}}"`), refuses to run with any left unfilled, and retries like
 `unity-retry.sh`. One snippet then serves every item or mode instead of a copy per value.
 
@@ -138,6 +144,20 @@ For C# through `eval`:
 - `eval` returns its `return` value. For async work (deploys, long imports), store the outcome with
   `AppDomain.CurrentDomain.SetData("key", value)` in one eval and poll `AppDomain.CurrentDomain.GetData("key")`
   with a second, rather than blocking the main thread.
+
+## 6. Waiting on long work (autoplay, test runs, builds)
+
+Two failures to avoid: a wait that never ends, and a wait that ends on a result while the game was broken all along.
+
+- **Every wait has a deadline** of about 2-3x the work's expected duration: `for i in $(seq 1 30); do ...; sleep 20; done`,
+  a `[ $n -lt N ]` counter, `$SECONDS`, or `timeout <s> bash -c '...'`. A background command has no time limit of its
+  own, so `until <file appears>; do sleep; done` waits forever if the file never comes. The shell guard blocks
+  polling loops with no bound. When the deadline passes, investigate; don't just start another wait.
+- **Each poll looks at the game, not only the result file.** `console clear` before starting, then on each poll check
+  `console status` (error count) and live state (Play mode, wave, player HP; through the debug menu if the project
+  has one) and stop at the first new error or stall. A report that hasn't appeared yet says nothing about whether
+  the run is healthy. The plugin's console check hook adds new console errors to the result of any Bash call that
+  touches Unity, but a poll that checks itself catches problems sooner.
 
 ## Checklist when a session ends
 

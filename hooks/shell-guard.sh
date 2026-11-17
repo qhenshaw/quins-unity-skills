@@ -1,23 +1,53 @@
 #!/usr/bin/env bash
-# PreToolUse hook (Bash), shipped with the quins-unity-skills plugin: refuse shell patterns that keep failing when
-# Claude Code's Bash tool runs Git Bash on Windows. On macOS / Linux it allows everything (these work fine there).
+# PreToolUse hook (Bash), shipped with the quins-unity-skills plugin. Exit 2 blocks the call and shows stderr to Claude.
 #
+# Git Bash on Windows only (these work fine on macOS / Linux) - QUINS_SHELL_GUARD=off disables, =on forces any OS:
 #  1. Heredocs (cat > file <<'EOF', python - <<EOF, ...): bodies containing apostrophes or quotes fail with
 #     "unexpected EOF while looking for matching `''", leaving half-written files.
 #  2. A bare `python -` (script from stdin) with no heredoc: it waits on stdin until the tool times out.
 #  3. Multi-line `python -c "..."` programs: nested quoting and escapes get mangled (a "\n" inside a string becomes
 #     a real line break), breaking the files being edited.
+#  Instead: write files with the Write tool and change them with Edit; put a longer script in a file and run it by
+#  path. One-line `python -c` calls are fine.
 #
-# Instead: write files with the Write tool and change them with Edit; put a longer script in a file and run it by
-# path. One-line `python -c` calls are fine. Set QUINS_SHELL_GUARD=off to disable, =on to force it on any OS.
+# Every OS - QUINS_WAIT_GUARD=off disables:
+#  4. Unbounded polling loops (`until <cond>; do sleep 10; done`). A background command has no time limit, so a
+#     condition that never comes true waits forever (one waited 5 hours on a log a 44 s rebuild never wrote).
+#     A loop that sleeps must be bounded: `timeout 300 bash -c '...'`, a `for i in $(seq 1 30)` counter, a
+#     `[ $n -lt 30 ]` / `(( ))` counter, or a `$SECONDS` deadline.
+#  5. `unity command script eval` (or unity-eval.sh) without `--timeout`: the CLI gives up after 30 s by default
+#     while the Editor keeps working, so a long eval looks finished or failed when it is neither. State the expected
+#     duration: `--timeout 30` for quick snippets, more for builds / rebuilds.
 #
-# Exit 2 blocks the call and shows stderr to Claude. Plain bash + grep (grep -P for check 3, skipped if missing).
+# Plain bash + grep (grep -P for check 3, skipped if missing).
+input="$(cat)"
+
+# The command string alone (so the description or other fields can't trigger a check); the whole input if grep -P is missing.
+cmd="$(printf '%s' "$input" | grep -oP '"command"\s*:\s*"(\\.|[^"\\])*"' 2>/dev/null | head -n 1)"
+[ -n "$cmd" ] || cmd="$input"
+
+# ------------------------------------------------------------------ every OS
+if [ "${QUINS_WAIT_GUARD:-on}" != "off" ]; then
+  # 4. A loop that sleeps, with nothing bounding it.
+  if printf '%s' "$cmd" | grep -qE '(^|[^A-Za-z0-9_])(until|while)[[:space:]]' \
+     && printf '%s' "$cmd" | grep -qE '(^|[^A-Za-z0-9_])sleep[[:space:]]+[0-9]' \
+     && ! printf '%s' "$cmd" | grep -qE '(^|[^A-Za-z0-9_-])timeout[[:space:]]+(-[a-z]+[[:space:]]+)*[0-9]|SECONDS|(^|[^A-Za-z0-9_])seq[[:space:]]|-(lt|le|gt|ge)[[:space:]]|\(\('; then
+    echo "Blocked: this polling loop has no deadline, so if its condition never comes true it waits forever. Bound it by the task's expected duration (about 2-3x): wrap it in 'timeout <seconds> bash -c ...', count with 'for i in \$(seq 1 N)' or '[ \$n -lt N ]', or check \$SECONDS. Print progress each poll, and confirm the work is actually running (file timestamps, editor status, console errors) instead of only waiting for its result." >&2
+    exit 2
+  fi
+  # 5. Editor eval with the CLI's silent 30 s default.
+  if printf '%s' "$cmd" | grep -qE 'script[[:space:]]+eval|unity-eval\.sh' && ! printf '%s' "$cmd" | grep -qE -- '--timeout'; then
+    echo "Blocked: 'script eval' / unity-eval.sh without --timeout gives up after 30 s while the Editor keeps working, so a long eval looks finished (or failed) when it isn't. Pass '--timeout <seconds>' sized to the work (30 for a quick snippet, 600+ for builds or content rebuilds)." >&2
+    exit 2
+  fi
+fi
+
+# ------------------------------------------------------------------ Git Bash on Windows only
 case "${QUINS_SHELL_GUARD:-auto}" in
   off) exit 0 ;;
   on) ;;
   *) case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) ;; *) exit 0 ;; esac ;;
 esac
-input="$(cat)"
 fix="Write file contents with the Write tool, change files with Edit, and for a longer script Write it to a file (e.g. in the scratchpad) and run it by path."
 
 # 1. A heredoc operator: << (not <<<), optional -, optional quote (JSON-escaped \" or '), then a delimiter word.

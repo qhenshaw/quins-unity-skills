@@ -1,5 +1,5 @@
 {
-  "description": "Shell guard for Git Bash on Windows: blocks heredocs, a bare `python -` and multi-line `python -c` programs, which fail or hang there. Does nothing on macOS / Linux.",
+  "description": "Shell guard: blocks unbounded polling loops and Unity evals without --timeout (any OS), plus heredocs, a bare `python -` and multi-line `python -c` programs under Git Bash on Windows. Console check: after Bash calls that touch Unity, reports new Editor console errors.",
   "hooks": {
     "PreToolUse": [
       {
@@ -8,6 +8,18 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/shell-guard.sh\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/console-check.sh\"",
+            "timeout": 15
           }
         ]
       }

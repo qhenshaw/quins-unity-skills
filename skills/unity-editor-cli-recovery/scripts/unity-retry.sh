@@ -2,7 +2,7 @@
 # Run a `unity` CLI call and retry it while the Editor is briefly unreachable (domain reload, recompile, asset import).
 #
 # usage: unity-retry.sh [--tries 12] [--delay 5] -- <unity args...>
-#   unity-retry.sh -- command script eval --file "$(cygpath -w build.cs)" --project-path 'E:\Proj'
+#   unity-retry.sh -- command script eval --file "$(cygpath -w build.cs)" --project-path 'E:\Proj' --timeout 600
 #   unity-retry.sh --tries 3 -- recompile --project-path 'E:\Proj'
 #
 # Retries only the transient failures - "400 Bad Request", "No Pipeline instance", refused/reset connections and
